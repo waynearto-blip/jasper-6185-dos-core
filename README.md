@@ -1,12 +1,14 @@
 Jasper.6185 Boot Record Collection
 
-This repository contains a compact set of x86 BIOS boot-sector examples.
+This repository contains a compact set of x86 BIOS boot-sector examples plus a stage-2 FAT12 loader foundation.
 
 Contents
 - boot.asm: minimal 512-byte DOS-style boot sector
 - shell.asm: interactive 512-byte shell with help/ver/clear/reboot
 - fat12_boot.asm: FAT12-style volume boot sector with BPB
+- stage2.asm: LBA-to-CHS conversion and BIOS INT 13h ReadSectors (stage-2 loader)
 - Makefile: build and run helper commands
+- .github/workflows/ci.yml: NASM build + 512-byte verification + QEMU smoke test
 
 Build
 make
@@ -31,7 +33,8 @@ Expected output
 
 Notes
 - These are BIOS real-mode boot sectors.
-- They are intentionally limited to one 512-byte sector.
+- The three boot records are intentionally limited to one 512-byte sector.
+- stage2.asm is a separate binary (loaded at 0x7E00) that provides the disk-reading engine for a full FAT12 file loader.
 - They are suitable as educational bootloader examples, not full operating systems.
 
 ## Jasper.6185 Register Block
@@ -54,11 +57,12 @@ Core Components:
 - boot.asm — minimal BIOS boot record
 - shell.asm — interactive boot-sector shell
 - fat12_boot.asm — FAT12-style volume boot record
+- stage2.asm — LBA-to-CHS + ReadSectors stage-2 loader
 - Makefile — build and emulation targets
 - README.md — usage guide
 
 Verification Constraints:
-- Binary size must equal 512 bytes.
+- Binary size must equal 512 bytes (boot records only).
 - Final two bytes must equal 55 AA.
 - Code must execute at 0x7C00.
 - Stack must be initialized before BIOS calls.
@@ -69,6 +73,7 @@ Master Status:
 - Boot record: COMPILED
 - Shell record: COMPILED
 - FAT12 record: COMPILED
+- Stage-2 loader: COMPILED
 - Signature: VALID
 - BIOS state: READY
 - Emulation target: QEMU
