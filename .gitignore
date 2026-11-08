@@ -1,0 +1,9 @@
+*.bin
+*.img
+*.o
+*.elf
+*.out
+*.iso
+floppy.img
+*.log
+.DS_Store
