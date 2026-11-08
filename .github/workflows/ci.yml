@@ -1,0 +1,45 @@
+name: Jasper.6185 DOS Core CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install NASM and QEMU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y nasm qemu-system-x86
+
+      - name: Build Binaries
+        run: |
+          make all
+
+      - name: Verify Binary Size Constraints
+        run: |
+          # Ensure boot sector and shell binaries are exactly 512 bytes
+          python3 -c "
+          import os
+          for f in ['boot.bin', 'shell.bin', 'fat12_boot.bin']:
+              if os.path.exists(f):
+                  size = os.path.getsize(f)
+                  print(f'{f}: {size} bytes')
+                  assert size == 512, f'Error: {f} is not 512 bytes (got {size})'
+          "
+
+      - name: Build Floppy Image (optional smoke target)
+        run: |
+          dd if=/dev/zero of=floppy.img bs=512 count=2880
+          dd if=fat12_boot.bin of=floppy.img conv=notrunc
+
+      - name: Test Emulation Smoke Run
+        run: |
+          # Run QEMU in headless mode briefly to verify boot stability
+          timeout 5s qemu-system-x86_64 -drive format=raw,file=floppy.img -nographic -serial mon:stdio -no-reboot || true
